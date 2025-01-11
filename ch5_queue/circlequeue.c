@@ -64,7 +64,7 @@ int main(){
     }
     printf("큐 포화.\n\n");
 
-    printf("--데이터 삭제 단계--");
+    printf("--데이터 삭제 단계--\n");
     while(!is_empty(&queue)){
         element = dequeue(&queue);
         printf("꺼낸 정수: %d \n", element);
