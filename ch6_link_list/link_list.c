@@ -30,7 +30,7 @@ ListNode* insert_first(ListNode *head, int value){  //리스트의 시작 부분
 }
 
 ListNode* insert(ListNode *head, ListNode *pre, int value){  // 리스트의 중간 부분에 항목을 삽입하는 함수
-    ListNode *p = (ListNode *)malloc(sizeof(ListNode)); // 새 노드 생성
+    ListNode *p = (ListNode *)malloc(sizeof(ListNode));  // 새 노드 생성
     p->data = value;
     p->link = pre->link;
     pre->link = p;

@@ -50,8 +50,23 @@ int search_list(ListType* plist, int x){
         if(p->data == x){
             return cnt;
         }
-        cnt++;
+        cnt++; 
     }
+}
+
+ListType* delete_odd(ListType *plist){
+    if(plist->size%2 == 0){
+        for(ListNode *i = plist->head; i != NULL; i = i->link){
+        i->link = (i->link)->link;
+        }
+    }
+    else {
+        for(ListNode *i = plist->head; i->link != NULL; i = i->link){
+        i->link = (i->link)->link;       
+        }
+    }
+
+    return plist;
 }
 
 int main(){
@@ -79,6 +94,11 @@ int main(){
     scanf("%d", &x);
 
     printf("%d번째에 있어.", search_list(plist, x));
+
+
+    delete_even(plist);
+
+    print_list(plist);
 
     return 0;
     
