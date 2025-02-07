@@ -56,8 +56,26 @@ element delete_min_heap(HeapType *h){
 }
 
 #define JOBS 7
-#define MACHINES 3;
+#define MACHINES 3
 
 int main(){
-    
+    int jobs[JOBS] = { 8, 7, 6, 5, 3, 2, 1 };
+    element m = { 0, 0};
+    HeapType* h;
+    h = create();
+    init(h);
+
+    for(int i = 0; i < MACHINES; i++){
+        m.id = i + 1;
+        m.avail = 0;
+        insert_min_heap(h, m);
+    }
+
+    for(int i=0; i < JOBS; i++) {
+        m = delete_min_heap(h);
+        printf("JOB %d을 시간=%d부터 시간=%d까지 기계 %d번에 할당한다.\n", i, m.avail, m.avail + jobs[i] - 1, m.id);
+        m.avail += jobs[i];
+        insert_min_heap(h, m);
+    }
+    return 0;
 }
