@@ -11,32 +11,37 @@ typedef struct {
 
 typedef struct {
     Term *terms;
-    int numTerms;  // 실제 저장된 항의 개수
+    int numTerms;  
 } Poly;
 
 Poly scanPoly() {
-    Poly p;
-    p.terms = (Term *)malloc(sizeof(Term) * 10);  // 초기 공간
-    p.numTerms = 0;
-    int capacity = 10;
+    Term *temp = (Term *)malloc(sizeof(Term) * 50); // 미리 넉넉히 동적 할당한 배열 생성성
+    int count = 0;
 
-    printf("수식을 입력하세요 (계수가 0이 아닌 항을 입력 받는 방식 2): ");
+    printf("수식을 입력하세요 (계수가 0이 아닌 항을 입력받는 방식 2): ");
 
     while (1) {
-        int a, b;
-        if (scanf("%d %d", &a, &b) != 2) break;
+        int coeff, degree;
+        if (scanf("%d %d", &coeff, &degree) != 2) break;
 
-        if (p.numTerms >= capacity) {
-            capacity *= 2;
-            p.terms = (Term *)realloc(p.terms, sizeof(Term) * capacity);
-        }
-
-        p.terms[p.numTerms].coeff = a;
-        p.terms[p.numTerms].degree = b;
-        p.numTerms++;
+        temp[count].coeff = coeff;
+        temp[count].degree = degree;
+        count++;
 
         if (getchar() == '\n') break;
     }
+
+    // 알맞은 크기로 새 메모리 할당
+    Term *exact = (Term *)malloc(sizeof(Term) * count);
+    for (int i = 0; i < count; i++) {
+        exact[i] = temp[i];
+    }
+
+    free(temp);  // 넉넉한 배열은 해제
+
+    Poly p;
+    p.terms = exact;
+    p.numTerms = count;
 
     return p;
 }
@@ -50,8 +55,8 @@ void printPoly(Poly p) {
         if (coef == 0) continue;
         if (i != 0 && coef > 0) printf(" + ");
         if (deg == 0) printf("%d", coef);
-        else if (deg == 1) printf("%dx", coef);
-        else printf("%dx^%d", coef, deg);
+            else if (deg == 1) printf("%dx", coef);
+            else printf("%dx^%d", coef, deg);
     }
     printf("\n");
 }
@@ -63,7 +68,7 @@ Poly addPoly(Poly a, Poly b) {
     result.numTerms = 0;
 
     int i = 0, j = 0;
-    while (i < a.numTerms && j < b.numTerms) {
+    while (i < a.numTerms && j < b.numTerms) {         //차수 비교에 따른 합 또는 순서 지정
         if (a.terms[i].degree == b.terms[j].degree) {
             int sum = a.terms[i].coeff + b.terms[j].coeff;
             if (sum != 0) {
@@ -81,14 +86,14 @@ Poly addPoly(Poly a, Poly b) {
         }
     }
 
-    while (i < a.numTerms) result.terms[result.numTerms++] = a.terms[i++];
+    while (i < a.numTerms) result.terms[result.numTerms++] = a.terms[i++];        // 나머지 복사 넣기
     while (j < b.numTerms) result.terms[result.numTerms++] = b.terms[j++];
 
     return result;
 }
 
 Poly multiplyPoly(Poly a, Poly b) {
-    int temp[200] = {0};
+    int temp[200] = {0};          // 곱하며 변하는 차수를 일일이 비교하며 더하기 번거로우므로 배열화 시킨 후 인덱스를 통해 차수 표현
 
     for (int i = 0; i < a.numTerms; i++) {
         for (int j = 0; j < b.numTerms; j++) {
@@ -104,8 +109,8 @@ Poly multiplyPoly(Poly a, Poly b) {
 
     for (int d = 199; d >= 0; d--) {
         if (temp[d] != 0) {
-            result.terms[result.numTerms].coeff = temp[d];
-            result.terms[result.numTerms].degree = d;
+            result.terms[result.numTerms].coeff = temp[d];  //계수
+            result.terms[result.numTerms].degree = d;       //차수
             result.numTerms++;
         }
     }
