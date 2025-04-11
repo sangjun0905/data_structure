@@ -104,7 +104,7 @@ int main() {
     initNum();
 
     for (int i = 0; i < 10000; i++) {
-        insert(rangeIndex(), 99999);
+        insert(rangeIndex(), 1234);
         delete(rangeIndex());
 
         int idx = rangeIndex();
