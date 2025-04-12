@@ -30,7 +30,6 @@ def opOrder(op):
     if op == '**': return 3
     elif op in '*/': return 2
     elif op in '+-': return 1
-    return 0
 
 
 def infToPostf(items):
@@ -38,7 +37,7 @@ def infToPostf(items):
     stack = []
 
     for item in items:
-        if item.replace('.', '', 1).isdigit():  # 숫자인 경우
+        if item.replace('.', '', 1).isdigit():  ## 소수 읽기
             output.append(item)
 
         elif item == '(':
@@ -50,9 +49,9 @@ def infToPostf(items):
             if not stack:
                 print("괄호 짝이 맞지 않습니다.")
                 exit(1)
-            stack.pop()  # '(' 제거
+            stack.pop()
 
-        else:  # 연산자
+        else:  ## 연산자
             while stack and stack[-1] != '(' and opOrder(stack[-1]) >= opOrder(item):
                 output.append(stack.pop())
             stack.append(item)
@@ -64,3 +63,47 @@ def infToPostf(items):
         output.append(stack.pop())
 
     return output
+
+
+def calcPostfix(items):
+    stack = []
+
+    for item in items:
+        if item.replace('.', '', 1).isdigit():
+            stack.append(float(item))  # 항상 실수로 처리
+
+        else:
+            b = stack.pop()
+            a = stack.pop()
+
+            if item == '+':
+                stack.append(a + b)
+            elif item == '-':
+                stack.append(a - b)
+            elif item == '*':
+                stack.append(a * b)
+            elif item == '/':
+                if b == 0:
+                    print("0으로 나눌 수 없습니다.")
+                    exit(1)
+                stack.append(a / b)
+            elif item == '**':
+                stack.append(a ** b)
+            else:
+                print(f"지원하지 않는 연산자: {item}")
+                exit(1)
+
+    return round(stack[0], 10)  # 항상 실수, 소수점 10자리까지 정리
+
+
+
+if __name__ == "__main__":
+    while 1:
+        expr = input("수식 입력 : ")
+        
+
+        items = dividePoly(expr)
+        postfix = infToPostf(items)
+        result = calcPostfix(postfix)
+        print("= ", result)
+    
