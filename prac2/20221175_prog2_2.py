@@ -47,7 +47,7 @@ def infToPostf(items):
             while stack and stack[-1] != '(':
                 output.append(stack.pop())
             if not stack:
-                print("괄호 짝이 맞지 않습니다.")
+                print("괄호 짝 오류")
                 exit(1)
             stack.pop()
 
@@ -58,7 +58,7 @@ def infToPostf(items):
 
     while stack:
         if stack[-1] in '()':
-            print("괄호 짝이 맞지 않습니다.")
+            print("괄호 짝 오류")
             exit(1)
         output.append(stack.pop())
 
