@@ -1,156 +1,126 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
-// 노드 구조체
-typedef struct Node {
+typedef struct Node{
+    int index;
     char word[100];
-    char meaning[300];
-    struct Node* next;
+    char mean[200];
+    struct Node* link;
 } Node;
 
-// 노드 생성
-Node* createNode(const char* word, const char* meaning) {
+int compareLoweredWord(char* a, char* b){
+    while(*a && *b){
+        if(tolower((unsigned char)*a) < tolower((unsigned char)*b)) return -1;
+        else if(tolower((unsigned char)*a) > tolower((unsigned char)*b)) return 1;
+        a++; b++;
+    }
+    
+    return tolower((unsigned char)*a) - tolower((unsigned char)*b);
+}
+
+Node* createNode(char* word, char* mean) {
     Node* newNode = (Node*)malloc(sizeof(Node));
     if (!newNode) {
-        fprintf(stderr, "메모리 할당 실패\n");
         exit(1);
     }
-    strncpy(newNode->word, word, 99);
-    newNode->word[99] = '\0';
-    strncpy(newNode->meaning, meaning, 299);
-    newNode->meaning[299] = '\0';
-    newNode->next = NULL;
+    strncpy(newNode->word, word, sizeof(newNode->word) - 1);
+    strncpy(newNode->mean, mean, sizeof(newNode->mean) - 1);
+    newNode->word[sizeof(newNode->word) - 1] = '\0';
+    newNode->mean[sizeof(newNode->mean) - 1] = '\0';
+    newNode->index = 0;
+    newNode->link = NULL;
     return newNode;
 }
 
-// 연결 리스트 삽입 (맨 앞 삽입 방식)
-void insertFront(Node** head, const char* word, const char* meaning) {
-    Node* newNode = createNode(word, meaning);
-    newNode->next = *head;
-    *head = newNode;
-}
-
-// 파일 읽고 리스트 생성
-void loadFile(const char* filename, Node** head) {
-    FILE* fp = fopen(filename, "r");
-    if (!fp) {
-        perror("파일 열기 실패");
-        exit(1);
+void insertSortedNode(Node** phead, char* word, char* mean){
+    Node* newNode = createNode(word, mean);
+    if (*phead == NULL || compareLoweredWord(word, (*phead)->word) < 0) {
+        newNode->link = *phead;
+        *phead = newNode;
+        return;
     }
 
-    char line[512];
-    while (fgets(line, sizeof(line), fp)) {
-        char* delim = strchr(line, ':');
-        if (!delim) continue;
-
-        *delim = '\0'; // ':' → '\0'
-        char* word = line;
-        char* meaning = delim + 1;
-
-        // 줄바꿈 제거
-        word[strcspn(word, "\n")] = '\0';
-        meaning[strcspn(meaning, "\n")] = '\0';
-
-        insertFront(head, word, meaning);
+    Node* curr = *phead;
+    while (curr->link && compareLoweredWord(word, curr->link->word) > 0) { //head를 타며 위치 탐색, curr의 다음 노드와 비교했을 때 word가 앞이면 삽입
+        curr = curr->link;
     }
-
-    fclose(fp);
+    newNode->link = curr->link;
+    curr->link = newNode;
 }
 
-// 리스트를 두 개로 나누는 함수 (pivot 기준)
-void partition(Node* head, const char* pivot,
-               Node** less, Node** equal, Node** greater) {
+void assignIndex(Node* head) {
+    int idx = 1;
     while (head) {
-        Node* next = head->next;
-        if (strcmp(head->word, pivot) < 0) {
-            head->next = *less;
-            *less = head;
-        } else if (strcmp(head->word, pivot) > 0) {
-            head->next = *greater;
-            *greater = head;
-        } else {
-            head->next = *equal;
-            *equal = head;
-        }
-        head = next;
+        head->index = idx++;
+        head = head->link;
     }
 }
 
-// 리스트 병합
-Node* concatenate(Node* a, Node* b) {
-    if (!a) return b;
-    Node* temp = a;
-    while (temp->next) temp = temp->next;
-    temp->next = b;
-    return a;
-}
-
-// 연결 리스트 퀵 정렬
-Node* quickSort(Node* head) {
-    if (!head || !head->next) return head;
-
-    Node* less = NULL;
-    Node* equal = NULL;
-    Node* greater = NULL;
-
-    partition(head, head->word, &less, &equal, &greater);
-
-    less = quickSort(less);
-    greater = quickSort(greater);
-
-    return concatenate(concatenate(less, equal), greater);
-}
-
-void searchWord(Node* head, const char* target) {
-    int index = 1;
-    while (head) {
-        if (strcmp(head->word, target) == 0) {
-            printf("찾음: %d. %s : %s\n", index, head->word, head->meaning);
+void searchWord(Node* head, char* object){
+    Node* curr = head;
+    while(curr){
+        if(compareLoweredWord(curr->word, object) == 0){
+            printf("탐색 결과: (%d) %s : %s\n", curr->index, curr->word, curr->mean);
             return;
         }
-        head = head->next;
-        index++;
+        curr = curr->link;
     }
-    printf("단어 '%s' 을(를) 찾을 수 없습니다.\n", target);
+    printf("대상이 존재하지 않음.");
 }
 
-// 리스트 출력 (노드 번호 포함)
-void printList(Node* head) {
-    int index = 1;
-    while (head) {
-        printf("%d. %s : %s\n", index++, head->word, head->meaning);
-        head = head->next;
-    }
-}
-
-// 메모리 해제
 void freeList(Node* head) {
     while (head) {
-        Node* next = head->next;
+        Node* next = head->link;
         free(head);
         head = next;
     }
 }
 
-// 메인 함수
-int main() {
+void readFile(char* fileName, Node **phead){ //파일을 줄별로 읽고, 줄을 단어와 뜻으로 분리
+    char line[300];
+    FILE* fp = fopen(fileName, "r");
+
+    if (!fp) {
+        perror("파일 열기 실패");
+        exit(1);
+    }
+
+    while (fgets(line, sizeof(line), fp)) {
+        line[strcspn(line, "\n")] = '\0';
+
+        char* sep = strstr(line, " : "); // 분리되는 부분 주소 저장
+
+        *sep = '\0';    // 분리지점 기준으로 단어와 뜻 분리
+        char* word = line;
+        char* mean = sep + 3; 
+
+        if (strlen(word) > 0 && strlen(mean) > 0) {
+            insertSortedNode(phead, word, mean);
+        }   
+    }
+
+    fclose(fp);    
+}
+
+int main(){
     Node* head = NULL;
 
-    loadFile("randdict_utf8.TXT", &head);
-    head = quickSort(head);
+    readFile("randdict_utf8.TXT", &head);
+
+    assignIndex(head);
 
     char input[100];
     while (1) {
-        printf("찾고 싶은 단어를 입력하세요 (종료는 'exit'): ");
+        printf("탐색 단어 입력: ");
         if (!fgets(input, sizeof(input), stdin)) break;
-        input[strcspn(input, "\n")] = '\0'; // 개행 제거
-
-        if (strcmp(input, "exit") == 0) break;
+        input[strcspn(input, "\n")] = '\0';
 
         searchWord(head, input);
     }
-
+    
     freeList(head);
+
     return 0;
 }
