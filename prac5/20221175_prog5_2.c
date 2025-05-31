@@ -6,14 +6,14 @@
 
 #define MAX_WORDS 50000
 
-typedef struct {
+typedef struct WordNode {
     char word[100];
     char mean[200];
     struct WordNode* left;
     struct WordNode* right;
 } WordNode;
 
-typedef struct {
+typedef struct Word {
     char word[100];
     char mean[200];
 } Word;
@@ -29,6 +29,7 @@ WordNode* createNode(char tempWord[], char tempMean[]) {
         perror("메모리 할당 실패");
         exit(1);
     }
+   
     strncpy(temp->word, tempWord, sizeof(temp->word) - 1);
     strncpy(temp->mean, tempMean, sizeof(temp->mean) - 1);
     temp->word[sizeof(temp->word) - 1] = '\0';
@@ -47,29 +48,29 @@ int compareLoweredWord(const char* a, const char* b) {
     return tolower((unsigned char)*a) - tolower((unsigned char)*b);
 }
 
-int compareWordsByLoweredWord(const void* a, const void* b) {
+WordNode* insertTree(WordNode* root, WordNode* temp) {
+    if (root == NULL) {
+        return createNode(temp->word, temp->mean);
+    }
+
+    if (compareLoweredWord(temp->word, root->word) < 0) {
+        root->left = insertTree(root->left, temp);
+    } else {
+        root->right = insertTree(root->right, temp);
+    }
+
+    return root;
+}
+
+int sortLoweredWord(const void* a, const void* b) {
     const Word* wa = (const Word*)a;
     const Word* wb = (const Word*)b;
     return compareLoweredWord(wa->word, wb->word);
 }
 
-WordNode* insertTree(WordNode* root, WordNode temp) {
-    if (root == NULL) {
-        return createNode(temp.word, temp.mean);
-    }
-
-    if (compareLoweredWord(temp.word, root->word) < 0) {
-        root->left = insertTree(root->left, temp);
-    } else {
-        root->right = insertTree(root->right, temp);
-    }
-    return root;
-}
-
 WordNode* search(WordNode* root, const char* target, int* comparedCnt) {
     if (root == NULL) {
         printf("그런 단어는 존재하지 않습니다.\n");
-        exit(1);
         return NULL;
     }
     (*comparedCnt)++;
@@ -84,9 +85,8 @@ WordNode* search(WordNode* root, const char* target, int* comparedCnt) {
 }
 
 
-WordNode* readFile(const char* filename) {
+void* readFile(const char* filename) {
     FILE* fp = fopen(filename, "r");
-    WordNode* NotSorted_BSTree = NULL;
 
     if (!fp) {
         perror("파일 열기 실패");
@@ -106,38 +106,45 @@ WordNode* readFile(const char* filename) {
         char* mean = sep + 2;
 
         if (strlen(word) != 0 && strlen(mean) != 0) {
-            WordNode temp;
-            strncpy(words[i].word, word, sizeof(temp.word) - 1);
-            strncpy(words[i].mean, mean, sizeof(temp.mean) - 1);
-            temp.word[sizeof(words[i].word) - 2] = '\0';
-            temp.mean[sizeof(words[i].mean) - 1] = '\0';
+            strncpy(words[i].word, word, sizeof(words[i].word) - 1);
+            strncpy(words[i].mean, mean, sizeof(words[i].mean) - 1);
+            words[i].word[sizeof(words[i].word) - 2] = '\0';
+            words[i].mean[sizeof(words[i].mean) - 1] = '\0';
 
-            
-
-            // if(NotSorted_BSTree == NULL) {
-            //     NotSorted_BSTree = createNode(temp.word, temp.mean);
-            // } else{
-            //     insertTree(NotSorted_BSTree, temp);
-            // }
             i++;
             wordCount++;
         }
     }
-    qsort(words, i, sizeof(Word), compareWordsByLoweredWord);
+    qsort(words, i, sizeof(Word), sortLoweredWord);
     printf("파일에서 읽을 때 센 단어의 수: %d\n", wordCount);
     fclose(fp);
+}
 
-    return NotSorted_BSTree;
+void sortedArrayToTree(WordNode* root, Word words[], int start, int end) {
+    if (start > end) return;
+
+    int mid = (start + end) / 2;
+
+    WordNode* node = createNode(words[mid].word, words[mid].mean);
+    insertTree(root, node);
+
+    sortedArrayToTree(root, words, start, mid - 1);
+    sortedArrayToTree(root, words, mid + 1, end);
 }
 
 int countNode(WordNode* root) {
-    if (root == NULL) return 0;
-
-    return 1 + countNode(root->left) + countNode(root->right);
+    if (root == NULL) { 
+        return 0;
+    }
+        int leftCnt = countNode(root->left); 
+        int rightCnt = countNode(root->right); 
+    return 1 + leftCnt + rightCnt;
 }
 
 int treeHeight(WordNode* root) {
-    if (root == NULL) return 0;
+    if (root == NULL) {
+        return 0;
+    }
 
     int leftHeight = treeHeight(root->left);
     int rightHeight = treeHeight(root->right);
@@ -146,25 +153,37 @@ int treeHeight(WordNode* root) {
 }
 
 int main() {
-    WordNode* NotSorted_BSTree = (WordNode*)malloc(sizeof(WordNode*));
-    NotSorted_BSTree = readFile("randdict_utf8.TXT");
+    WordNode* Sorted_BSTree = NULL;
+    
+    readFile("randdict_utf8.TXT");
     int index = 1;
     char target[100];
 
-    printf("트리의 노드 수 : %d\n", countNode(NotSorted_BSTree));
-    printf("트리의 높이 : %d\n", treeHeight(NotSorted_BSTree));
+    int mid = (0 + wordCount - 1) / 2;
+    Sorted_BSTree = createNode(words[mid].word, words[mid].mean);
+
+    sortedArrayToTree(Sorted_BSTree, words, 0, mid - 1);
+    sortedArrayToTree(Sorted_BSTree, words, mid + 1, wordCount - 1);
+
+    if (!Sorted_BSTree) {
+    printf("트리 생성 실패\n");
+    return 1;
+    }
+
+    printf("root 단어(중앙값): %s\n", Sorted_BSTree->word);
+
+    printf("트리의 노드 수 : %d\n", countNode(Sorted_BSTree));
+    printf("트리의 높이 : %d\n", treeHeight(Sorted_BSTree));
     while (1) {
+        int comparedCnt = 0;
+
         printf("단어 입력 : ");
         fgets(target, sizeof(target), stdin);
         target[strcspn(target, "\n")] = '\0';
 
-        int comparedCnt = 0;
-
-        WordNode* targetWordNode = search(NotSorted_BSTree, target, &comparedCnt);
+        WordNode* targetWordNode = search(Sorted_BSTree, target, &comparedCnt);
         printf("(탐색 횟수:%d) %s\t%s\n", comparedCnt, targetWordNode->word, targetWordNode->mean);
     }
 
     return 0;
 }
-
-//트리 노드 수, 높이 구하기

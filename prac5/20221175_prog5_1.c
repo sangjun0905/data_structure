@@ -130,7 +130,7 @@ int treeHeight(WordNode* root) {
 }
 
 int main() {
-    WordNode* NotSorted_BSTree = (WordNode*)malloc(sizeof(WordNode*));
+    WordNode* NotSorted_BSTree = (WordNode*)malloc(sizeof(WordNode));   // 정렬되지 않은, 사전에서 한줄 읽고 삽입하는 방식의 이진탐색트리
     NotSorted_BSTree = readFile("randdict_utf8.TXT");
     int index = 1;
     char target[100];
@@ -147,8 +147,6 @@ int main() {
         WordNode* targetWordNode = search(NotSorted_BSTree, target, &comparedCnt);
         printf("(탐색 횟수:%d) %s\t%s\n", comparedCnt, targetWordNode->word, targetWordNode->mean);
     }
-
+    free(NotSorted_BSTree);
     return 0;
 }
-
-//트리 노드 수, 높이 구하기
